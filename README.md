@@ -8,20 +8,7 @@ and a GPU pipeline with trails, glow and beat-reactive effects. Built with JUCE 
 > run on a real machine** by its author (no JUCE/GPU in the authoring environment). Expect to fix a few compiler errors or
 > shader tweaks on the first CI run. Section "If the first build fails" explains how.
 
-## 1. Build it (about 5 minutes, no installs)
-
-1. Create a new **empty GitHub repository**.
-2. Drag the *contents* of this folder (`CMakeLists.txt`, `Source/`, `scripts/`, `.github/`, `.gitignore`, `README.md`) into it and commit.
-   **Important:** the `.github` folder is hidden on macOS Finder (press Cmd+Shift+. to show it). If the GitHub web uploader skips it,
-   use GitHub Desktop / `git push` instead, or create the file `.github/workflows/build.yml` manually via *Add file -> Create new file* and paste the contents.
-   Without that file nothing gets built.
-3. Open the repo's **Actions** tab. The *Build* workflow starts automatically (or press *Run workflow*).
-   It builds **Windows, macOS and Linux** in parallel (about 10-15 min the first time).
-4. Open the finished run and download the artifacts `GridARV-Windows`, `-macOS`, `-Linux`.
-   Each zip contains the plugins, the standalone app and a one-click installer script.
-5. To publish a release with the zips attached: create a tag like `v1.0.0` and push it.
-
-## 2. Install
+## Install
 
 | OS | Do this |
 |---|---|
@@ -33,7 +20,7 @@ and a GPU pipeline with trails, glow and beat-reactive effects. Built with JUCE 
 **Ableton Live:** *Preferences -> Plug-ins -> Rescan*, drop it on any track (VST3 on Win/Mac, AU on Mac). Click the wrench icon / device title to show the window.
 The plugin passes audio through untouched. In Ableton you can also use the **Sidechain** input (set *Input = Sidechain* in the panel) to visualize a different track.
 
-## 3. Standalone app
+## Standalone app
 
 Listens to any **audio input**. Press *Audio settings...* in the panel to pick the device (remembered next launch).
 To visualize what your computer is playing, route it into an input:
@@ -43,7 +30,7 @@ To visualize what your computer is playing, route it into an input:
 
 `F` or *Fullscreen* = fullscreen, `Esc` leaves it.
 
-## 4. Controls
+## Controls
 
 - **Tab** or double-click the view: hide/show the panel. **Left/Right**: previous/next mode. **R**: random mode.
 - *Auto-cycle (beats)*: switch to the next mode every N detected beats.
@@ -72,7 +59,7 @@ Drag **TTF / OTF** fonts onto the window, or pick any installed system font.
 Every setting is a host parameter: visual mode (shows the mode *name*), palette, sensitivity, trails, glow, text line, text size, image slot, etc.
 Automate *Visual Mode* to change visuals on cue and *Text Line* to trigger lyrics.
 
-## 5. The 103 modes
+## The 103 modes
 
 - **Spectrum** (14): Classic Bars, Fine Bars, Mirror Bars, LED Stack, LED Mirror, Chunky Blocks, Wide Wall, Radial Burst, Radial Dual, Sunburst Fill, Halo Line, Spin Ring, Triple Arc Meter, Level Bars
 - **Waveform** (8): Scope Line, Scope Mirror, Scope Stereo, Scope Layers, Scope Circle, Phase Scope, Phase Mid/Side, Phase Thin
@@ -85,22 +72,14 @@ Automate *Visual Mode* to change visuals on cue and *Text Line* to trigger lyric
 - **Image Synthesis** (8): Spectrogram, Spectrogram Mirror, Spectrogram Vertical, Spectrogram Radar, Additive Waves, Moire Synth, Radial Synth, Crystal Synth
 - **Image FX** (10): Image Pulse, Image Ripple, Image RGB Split, Image Swirl, Image Mosaic, Image Glitch, Image Spectrum Wave, Image Mirror Tiles, Image Luma Spectrum, Image Edge Glow
 
-## 6. VST2
+## What about VST2?
 
 JUCE 8 dropped VST2 and Steinberg no longer licenses the VST2 SDK, so VST2 is **opt-in** and the SDK is **not included**.
 If you own a VST2 license: in a *private* copy of the repo add the SDK as `vst2sdk/` (so `vst2sdk/pluginterfaces/vst2.x/aeffect.h` exists)
 and run the *Build with VST2 (manual)* workflow. It builds with JUCE 7.0.12 and adds a `VST/` folder to the zips.
 Local build: `cmake -B build -DENABLE_VST2=ON -DVST2_SDK_PATH=/path/to/vst2sdk -DJUCE_TAG=7.0.12`.
 
-## 7. Local build (optional)
-
-```
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-cmake --build build --config Release --parallel
-```
-Linux needs: `libasound2-dev libfreetype6-dev libfontconfig1-dev libx11-dev libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev libxrandr-dev libxrender-dev libglu1-mesa-dev mesa-common-dev libgl1-mesa-dev`.
-
-## 8. Architecture
+## Architecture
 
 ```
 Source/
@@ -119,14 +98,3 @@ rendering stops completely when the plugin window is closed; vsync is on; render
 ### Adding a mode
 Add a row to `kModes` in `VisualModes.h` using an existing family and different parameters (`p[4]`, `q[4]`; meanings are in the family's shader comment/code in `Shaders.h`).
 For a new family: add an `enum Base` entry, a GLSL `vec3 render(vec2 uv, vec2 st)` string and its slot in `kModeSource`.
-
-## 9. If the first build fails
-
-Open the failed job in the Actions tab, copy the first `error:` lines and send them back; compile errors from a never-compiled
-code base are usually one-line fixes. GLSL errors are not build errors: they appear in the panel's status line at runtime
-("SHADER ERROR: ...") and affect only that family - the rest keeps working.
-
-## 10. Licensing notes
-
-JUCE is dual-licensed (AGPLv3 or a JUCE commercial/free-tier license with revenue limits). If you plan to sell this plugin
-closed-source you need the appropriate JUCE license - see juce.com/legal. VST is a trademark of Steinberg; VST3 is MIT/GPLv3 licensed via JUCE.
