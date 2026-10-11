@@ -6,6 +6,3 @@ dist/
 *.user
 .DS_Store
 
-# Do not commit Steinberg's proprietary VST2 SDK.
-/vst2sdk/
-/VST2_SDK/

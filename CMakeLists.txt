@@ -11,10 +11,8 @@ project(GridARV VERSION 1.0.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(ENABLE_VST2 "Also build VST2 (requires valid pre-October-2018 Steinberg written permission, private SDK + JUCE 7)" OFF)
-set(VST2_SDK_PATH "" CACHE PATH "Folder that contains pluginterfaces/vst2.x/aeffect.h")
-# JUCE 8 dropped the VST2 wrapper. For VST2 builds use:  -DJUCE_TAG=7.0.12
-set(JUCE_TAG "8.0.4" CACHE STRING "JUCE git tag to build against")
+# Modern JUCE 8 build; VST3 and AU (macOS) only.
+set(JUCE_TAG "8.0.4")
 
 include(FetchContent)
 FetchContent_Declare(JUCE
@@ -29,14 +27,6 @@ if(APPLE)
     list(APPEND PLUGIN_FORMATS AU)
 endif()
 
-if(ENABLE_VST2)
-    if(NOT EXISTS "${VST2_SDK_PATH}/pluginterfaces/vst2.x/aeffect.h")
-        message(FATAL_ERROR "ENABLE_VST2 is ON but VST2_SDK_PATH is wrong: '${VST2_SDK_PATH}'")
-    endif()
-    juce_set_vst2_sdk_path("${VST2_SDK_PATH}")
-    list(APPEND PLUGIN_FORMATS VST)
-    message(STATUS "VST2 build enabled")
-endif()
 
 set(VIS_SOURCES
     Source/PluginProcessor.cpp
@@ -45,10 +35,9 @@ set(VIS_SOURCES
 
 set(VIS_DEFS
     JUCE_WEB_BROWSER=0
-    JUCE_USE_CURL=0
-    JUCE_VST3_CAN_REPLACE_VST2=0)
+    JUCE_USE_CURL=0)
 
-# ---- VST3 / AU / (VST2) plugin ---------------------------------------------
+# ---- VST3 / AU plugin ---------------------------------------------
 juce_add_plugin(GridARVPlugin
     COMPANY_NAME               "Kone Labie"
     PLUGIN_MANUFACTURER_CODE   Kone
@@ -61,8 +50,7 @@ juce_add_plugin(GridARVPlugin
     EDITOR_WANTS_KEYBOARD_FOCUS TRUE
     COPY_PLUGIN_AFTER_BUILD    FALSE
     VST3_CATEGORIES            Fx Analyzer
-    AU_MAIN_TYPE               kAudioUnitType_Effect
-    VST2_CATEGORY              kPlugCategEffect)
+    AU_MAIN_TYPE               kAudioUnitType_Effect)
 
 target_sources(GridARVPlugin PRIVATE ${VIS_SOURCES})
 target_compile_definitions(GridARVPlugin PUBLIC ${VIS_DEFS})

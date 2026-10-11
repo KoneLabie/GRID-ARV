@@ -10,8 +10,6 @@ mkdir -p "$OUT/Standalone"
 
 [ -d "$P/VST3" ] && cp -R "$P/VST3" "$OUT/"
 [ -d "$P/AU" ]   && cp -R "$P/AU"   "$OUT/"
-[ -d "$P/VST" ]  && cp -R "$P/VST"  "$OUT/"
-if [ -d "$OUT/VST" ]; then cp docs/VST2-DISTRIBUTION-NOTICE.txt "$OUT/"; fi
 cp -R "$S/"* "$OUT/Standalone/"
 
 case "$PLAT" in

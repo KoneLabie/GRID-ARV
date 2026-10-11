@@ -5,9 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE="$ROOT/dist/stage"
 WORK="$ROOT/dist/macos-installer-work"
 COMPONENTS="$WORK/components"
-FLAVOR="Standard"
-if [[ "${BUILD_VST2:-false}" == "true" ]]; then FLAVOR="VST2"; fi
-OUT="$ROOT/dist/GridARV-Installer-${FLAVOR}-macOS.pkg"
+OUT="$ROOT/dist/GridARV-Installer-Standard-macOS.pkg"
 VERSION="$(sed -n 's/^project(GridARV VERSION \([^ ]*\).*/\1/p' "$ROOT/CMakeLists.txt" | head -n1)"
 VERSION="${VERSION:-1.0.0}"
 
@@ -37,19 +35,6 @@ fi
 if [[ -d "$STAGE/AU" ]] && find "$STAGE/AU" -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
   build_component "au" "Audio Units Plug-in" "Install Grid ARV for Audio Units-compatible DAWs." \
     "com.konelabie.gridarv.au" "Library/Audio/Plug-Ins/Components" "$STAGE/AU"
-fi
-if [[ -d "$STAGE/VST" ]] && find "$STAGE/VST" -mindepth 1 -maxdepth 1 -print -quit | grep -q .; then
-  choice_id="vst2"
-  identifier="com.konelabie.gridarv.vst2"
-  payload="$WORK/payload-$choice_id"
-  mkdir -p "$payload/Library/Audio/Plug-Ins/VST" "$payload/Library/Application Support/Grid ARV"
-  cp -R "$STAGE/VST"/. "$payload/Library/Audio/Plug-Ins/VST/"
-  cp "$STAGE/VST2-DISTRIBUTION-NOTICE.txt" "$payload/Library/Application Support/Grid ARV/"
-  pkgbuild --root "$payload" --identifier "$identifier" --version "$VERSION" \
-    --install-location / "$COMPONENTS/$choice_id.pkg"
-  CHOICES+=("<line choice=\"$choice_id\"/>")
-  PKG_REFS+=("<choice id=\"$choice_id\" title=\"VST2 Plug-in\" description=\"Licensed VST2 build only; requires valid prior written distribution permission.\" start_selected=\"false\"><pkg-ref id=\"$identifier\"/></choice>" \
-             "<pkg-ref id=\"$identifier\" version=\"$VERSION\" onConclusion=\"none\">$choice_id.pkg</pkg-ref>")
 fi
 APP_PATH=""
 if [[ -d "$STAGE/Standalone" ]]; then

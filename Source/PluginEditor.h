@@ -7,7 +7,7 @@
 #include "VisualRenderer.h"
 
 // The editor IS the OpenGL view. JUCE draws the control panel (normal components) on top of it.
-// Used for the VST3/AU/VST2 plugin window and, unchanged, as the content of the standalone window.
+// Used for the VST3/AU plugin window and, unchanged, as the content of the standalone window.
 class AudioVisualizerEditor : public juce::AudioProcessorEditor,
                               public juce::FileDragAndDropTarget,
                               private juce::Timer

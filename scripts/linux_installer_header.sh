@@ -2,7 +2,6 @@
 # Grid ARV self-extracting Linux installer. The compressed payload is appended below.
 set -euo pipefail
 PAYLOAD_BYTES='@PAYLOAD_BYTES@'
-APP_NAME='Grid ARV'
 
 show_help() {
   cat <<HELP
@@ -11,14 +10,12 @@ Grid ARV installer
 Run this file in a terminal to choose what to install.
   1  VST3 plug-in (user-local: ~/.vst3)
   2  Standalone app (user-local: ~/.local/opt/GridARV)
-  3  VST2 plug-in (licensed builds only; user-local: ~/.vst)
-  4  All available components
+  3  All available components
 
 Options:
   --help       Show this help
   --vst3       Install only the VST3 plug-in (non-interactive)
   --standalone Install only the standalone app (non-interactive)
-  --vst2       Install only the VST2 plug-in (non-interactive; licensed builds only)
   --all        Install all available components (non-interactive)
 HELP
 }
@@ -35,25 +32,21 @@ fi
 
 HAS_VST3=0
 HAS_STANDALONE=0
-HAS_VST2=0
 [[ -d "$TMP_DIR/VST3" ]] && HAS_VST3=1
 [[ -d "$TMP_DIR/Standalone" ]] && HAS_STANDALONE=1
-[[ -d "$TMP_DIR/VST" ]] && HAS_VST2=1
-if [[ $HAS_VST3 -eq 0 && $HAS_STANDALONE -eq 0 && $HAS_VST2 -eq 0 ]]; then
+if [[ $HAS_VST3 -eq 0 && $HAS_STANDALONE -eq 0 ]]; then
   echo 'This installer contains no recognized components.' >&2
   exit 1
 fi
 
 INSTALL_VST3=0
 INSTALL_STANDALONE=0
-INSTALL_VST2=0
 if [[ $# -gt 0 ]]; then
   for arg in "$@"; do
     case "$arg" in
       --vst3) INSTALL_VST3=1 ;;
       --standalone) INSTALL_STANDALONE=1 ;;
-      --vst2) INSTALL_VST2=1 ;;
-      --all) INSTALL_VST3=$HAS_VST3; INSTALL_STANDALONE=$HAS_STANDALONE; INSTALL_VST2=$HAS_VST2 ;;
+      --all) INSTALL_VST3=$HAS_VST3; INSTALL_STANDALONE=$HAS_STANDALONE ;;
       *) echo "Unknown option: $arg" >&2; show_help; exit 2 ;;
     esac
   done
@@ -67,22 +60,16 @@ else
   echo 'Choose what to install (enter one or more numbers separated by spaces):'
   [[ $HAS_VST3 -eq 1 ]] && echo '  1) VST3 plug-in'
   [[ $HAS_STANDALONE -eq 1 ]] && echo '  2) Standalone app'
-  [[ $HAS_VST2 -eq 1 ]] && echo '  3) VST2 plug-in (licensed builds only)'
-  echo '  4) All available components'
+  echo '  3) All available components'
   read -r -p 'Selection [standard]: ' selection
   selection="${selection:-standard}"
-  if [[ "$selection" == "standard" ]]; then
+  if [[ "$selection" == "standard" || "$selection" == "3" || "$selection" == "all" || "$selection" == "both" ]]; then
     INSTALL_VST3=$HAS_VST3
     INSTALL_STANDALONE=$HAS_STANDALONE
-  elif [[ "$selection" == "4" || "$selection" == "all" || "$selection" == "both" ]]; then
-    INSTALL_VST3=$HAS_VST3
-    INSTALL_STANDALONE=$HAS_STANDALONE
-    INSTALL_VST2=$HAS_VST2
   else
     [[ " $selection " == *' 1 '* && $HAS_VST3 -eq 1 ]] && INSTALL_VST3=1
     [[ " $selection " == *' 2 '* && $HAS_STANDALONE -eq 1 ]] && INSTALL_STANDALONE=1
-    [[ " $selection " == *' 3 '* && $HAS_VST2 -eq 1 ]] && INSTALL_VST2=1
-    if [[ $INSTALL_VST3 -eq 0 && $INSTALL_STANDALONE -eq 0 && $INSTALL_VST2 -eq 0 ]]; then
+    if [[ $INSTALL_VST3 -eq 0 && $INSTALL_STANDALONE -eq 0 ]]; then
       echo 'Nothing selected or selected component is not included; no changes made.'
       exit 0
     fi
@@ -91,7 +78,6 @@ fi
 
 if [[ $INSTALL_VST3 -eq 1 && $HAS_VST3 -eq 0 ]]; then echo 'VST3 component is not present in this package.' >&2; exit 2; fi
 if [[ $INSTALL_STANDALONE -eq 1 && $HAS_STANDALONE -eq 0 ]]; then echo 'Standalone component is not present in this package.' >&2; exit 2; fi
-if [[ $INSTALL_VST2 -eq 1 && $HAS_VST2 -eq 0 ]]; then echo 'VST2 component is not present in this package.' >&2; exit 2; fi
 
 if [[ $INSTALL_VST3 -eq 1 ]]; then
   mkdir -p "$HOME/.vst3"
@@ -103,23 +89,6 @@ if [[ $INSTALL_VST3 -eq 1 ]]; then
     cp -R "$bundle" "$HOME/.vst3/"
   done
   echo 'Installed VST3 plug-in to ~/.vst3'
-fi
-
-if [[ $INSTALL_VST2 -eq 1 ]]; then
-  mkdir -p "$HOME/.vst"
-  shopt -s nullglob
-  for bundle in "$TMP_DIR"/VST/*; do
-    [[ -e "$bundle" ]] || continue
-    destination="$HOME/.vst/$(basename "$bundle")"
-    rm -rf "$destination"
-    cp -R "$bundle" "$HOME/.vst/"
-  done
-  echo 'Installed VST2 plug-in to ~/.vst. Rescan VST2 plug-ins in your DAW if needed.'
-  if [[ -f "$TMP_DIR/VST2-DISTRIBUTION-NOTICE.txt" ]]; then
-    mkdir -p "$HOME/.local/share/doc/GridARV"
-    cp "$TMP_DIR/VST2-DISTRIBUTION-NOTICE.txt" "$HOME/.local/share/doc/GridARV/"
-    echo 'Installed VST2 licensing notice to ~/.local/share/doc/GridARV/'
-  fi
 fi
 
 if [[ $INSTALL_STANDALONE -eq 1 ]]; then
@@ -148,6 +117,6 @@ DESKTOP
   echo 'Installed standalone app to ~/.local/opt/GridARV and added a desktop-menu entry.'
 fi
 
-echo 'Grid ARV installation complete. Rescan plug-ins in your DAW if you installed VST3 or VST2.'
+echo 'Grid ARV installation complete. Rescan plug-ins in your DAW if you installed VST3.'
 exit 0
 __GRIDARV_PAYLOAD_BELOW__

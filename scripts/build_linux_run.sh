@@ -3,9 +3,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE="$ROOT/dist/stage"
-FLAVOR="Standard"
-if [[ "${BUILD_VST2:-false}" == "true" ]]; then FLAVOR="VST2"; fi
-OUT="$ROOT/dist/GridARV-Installer-${FLAVOR}-Linux.run"
+OUT="$ROOT/dist/GridARV-Installer-Standard-Linux.run"
 PAYLOAD="$ROOT/dist/gridarv-payload.tar.gz"
 HEADER="$ROOT/scripts/linux_installer_header.sh"
 
