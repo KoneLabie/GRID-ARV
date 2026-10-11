@@ -3,7 +3,7 @@
 set -euo pipefail
 ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE="$ROOT/dist/stage"
-OUT="$ROOT/dist/GridARV-Installer-Standard-Linux.run"
+OUT="$ROOT/dist/GRID-ARV_Installer-Linux.run"
 PAYLOAD="$ROOT/dist/gridarv-payload.tar.gz"
 HEADER="$ROOT/scripts/linux_installer_header.sh"
 

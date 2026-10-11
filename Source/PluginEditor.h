@@ -5,6 +5,7 @@
 #include <vector>
 #include "PluginProcessor.h"
 #include "VisualRenderer.h"
+#include "InterfaceLookAndFeel.h"
 
 // The editor IS the OpenGL view. JUCE draws the control panel (normal components) on top of it.
 // Used for the VST3/AU plugin window and, unchanged, as the content of the standalone window.
@@ -54,6 +55,7 @@ private:
     static bool sameKey(const juce::KeyPress& a, const juce::KeyPress& b);
     void storeKeyBinding(const KeyBinding& binding);
 
+    InterfaceLookAndFeel interfaceStyle; // outlives all child controls
     AudioVisualizerProcessor& proc;
     std::vector<KeyBinding> keyBindings;
     juce::OpenGLContext glContext;

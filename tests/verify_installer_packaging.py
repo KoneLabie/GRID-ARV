@@ -9,7 +9,7 @@ checks = {
     "Windows installer offers VST3 and standalone": (
         ROOT / "installer/windows/GridARV.iss",
         [r"\[Components\]", r'Name: "vst3"', r'Name: "standalone"',
-         r"\{commoncf\}\\VST3", r"OutputBaseFilename=GridARV-Installer-Windows-Standard"],
+         r"\{commoncf\}\\VST3", r"OutputBaseFilename=GRID-ARV_Installer-Windows"],
     ),
     "Windows installer script finds the standalone app": (
         ROOT / "scripts/build_windows_installer.ps1",
@@ -18,7 +18,7 @@ checks = {
     "macOS installer offers VST3 AU and standalone": (
         ROOT / "scripts/build_macos_pkg.sh",
         [r"productbuild --distribution", r"choices-outline", r"start_selected=\\\"true\\\"",
-         r"GridARV-Installer-Standard-macOS\.pkg", r'build_component "vst3"', r'build_component "au"',
+         r"GRID-ARV_Installer-macOS\.pkg", r'build_component "vst3"', r'build_component "au"',
          r'choice_id="standalone"'],
     ),
     "Linux installer offers VST3 and standalone": (
@@ -27,13 +27,13 @@ checks = {
     ),
     "Linux self-extractor builds direct installer": (
         ROOT / "scripts/build_linux_run.sh",
-        [r"GridARV-Installer-Standard-Linux\.run", r"chmod \+x", r"tar -czf"],
+        [r"GRID-ARV_Installer-Linux\.run", r"chmod \+x", r"tar -czf"],
     ),
     "Build workflow publishes direct installer assets": (
         ROOT / ".github/workflows/build.yml",
         [r"Build Windows menu installer", r"Build macOS component installer",
-         r"Build Linux self-contained installer", r"dist/GridARV-Installer-\*",
-         r"artifacts/GridARV-Installer-\*", r"ubuntu-22\.04", r"windows-latest", r"macos-latest"],
+         r"Build Linux self-contained installer", r"dist/GRID-ARV_Installer-\*",
+         r"artifacts/GRID-ARV_Installer-\*", r"ubuntu-22\.04", r"windows-latest", r"macos-latest"],
     ),
     "CMake selects standard formats": (
         ROOT / "CMakeLists.txt",

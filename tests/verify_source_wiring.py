@@ -124,6 +124,13 @@ if 'addSubsection("FRAMING & ORIENTATION"' not in EDITOR:
     fail("Image framing/orientation nested section missing")
 if 'addSection("TEXT"' not in EDITOR or 'addSection("SETTINGS"' not in EDITOR:
     fail("Text or Settings category missing")
+settings_start = EDITOR.index('addSection("SETTINGS"')
+first_settings_group = EDITOR.index('addSubsection(', settings_start)
+settings_top = EDITOR[settings_start:first_settings_group]
+if 'if (proc.standalone)' not in settings_top or 'addActionButton("Audio settings..."' not in settings_top:
+    fail("standalone Audio settings must be directly at the top of Settings")
+if 'WINDOW & STREAM CAPTURE' in EDITOR:
+    fail("obsolete Window & Stream Capture group must be removed")
 section_positions = [EDITOR.find(f'addSection("{name}"') for name in
                      ["MOTION & COLOUR", "IMAGE", "TEXT", "SETTINGS"]]
 if any(position < 0 for position in section_positions) or section_positions != sorted(section_positions):

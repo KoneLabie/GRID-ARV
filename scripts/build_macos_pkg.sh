@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "$0")/.." && pwd)"
 STAGE="$ROOT/dist/stage"
 WORK="$ROOT/dist/macos-installer-work"
 COMPONENTS="$WORK/components"
-OUT="$ROOT/dist/GridARV-Installer-Standard-macOS.pkg"
+OUT="$ROOT/dist/GRID-ARV_Installer-macOS.pkg"
 VERSION="$(sed -n 's/^project(GridARV VERSION \([^ ]*\).*/\1/p' "$ROOT/CMakeLists.txt" | head -n1)"
 VERSION="${VERSION:-1.0.0}"
 

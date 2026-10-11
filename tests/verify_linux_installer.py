@@ -34,7 +34,7 @@ with tempfile.TemporaryDirectory(prefix="gridarv-installer-test-") as temp_dir:
     app.chmod(0o755)
 
     run(["bash", str(scripts / "build_linux_run.sh")], cwd=repo)
-    installer = repo / "dist" / "GridARV-Installer-Standard-Linux.run"
+    installer = repo / "dist" / "GRID-ARV_Installer-Linux.run"
     if not installer.is_file() or not os.access(installer, os.X_OK):
         raise RuntimeError("Linux installer was not created as an executable file")
 

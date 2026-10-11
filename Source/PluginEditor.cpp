@@ -15,6 +15,8 @@ public:
     {
         for (int i = 0; i < kNumModes; ++i) categories.addIfNotAlreadyThere(kModes[i].category);
 
+        setOpaque(true);
+
         // Status is pinned at the top; the everyday mode controls below it are
         // always visible and intentionally have no collapsible category header.
         auto* statusHeading = newLabel("STATUS");
@@ -128,6 +130,8 @@ public:
         addSlider(ParamID::textReact, "Beat reaction");
 
         addSection("SETTINGS", false);
+        if (proc.standalone)
+            addActionButton("Audio settings...", [this] { if (editor.onOpenAudioSettings) editor.onOpenAudioSettings(); });
         addSubsection("TIMING & ADVANCED", false);
         addSlider(ParamID::textLine, "Line (0 = automatic)");
         addSlider(ParamID::textBeats, "Advance (beats)");
@@ -138,13 +142,9 @@ public:
                      [this] { proc.lyricRunning = false; },
                      [this] { proc.lyricClock = 0.0; } });
 
-        addSubsection("WINDOW & STREAM CAPTURE", false);
-        if (proc.standalone)
-            addActionButton("Audio settings...", [this] { if (editor.onOpenAudioSettings) editor.onOpenAudioSettings(); });
-        auto* captureNote = newLabel("Fullscreen and clean output are controlled from Key Bindings. Clean output hides the control overlay for OBS capture.");
-        items.push_back({ Full, captureNote, nullptr, nullptr, 42, currentSection });
-
         addSubsection("KEY BINDINGS", false);
+        auto* captureNote = newLabel("Use Fullscreen for presentation, or Clean output to hide controls when capturing in OBS.");
+        items.push_back({ Full, captureNote, nullptr, nullptr, 42, currentSection });
         addKeyBindingRow("fullscreen", "Fullscreen (standalone)");
         addKeyBindingRow("clean_output", "Clean output (OBS)");
         addKeyBindingRow("random_mode", "Random mode");
@@ -165,18 +165,15 @@ public:
 
     void paint(juce::Graphics& g) override
     {
-        juce::ColourGradient bg(juce::Colour(0xF20C101B), 0.0f, 0.0f,
-                                juce::Colour(0xF5171025), (float) getWidth(), (float) getHeight(), false);
-        g.setGradientFill(bg);
-        g.fillAll();
-        g.setColour(juce::Colour(0xFF28D7E8).withAlpha(0.8f));
-        g.fillRect(0, 0, getWidth(), 2);
+        g.fillAll(juce::Colour(0xff1c1d21));
+        g.setColour(juce::Colour(0xff34363d));
+        g.fillRect(0, 0, 1, getHeight());
     }
 
     void resized() override
     {
-        const int w = getWidth(), pad = 10;
-        int y = 8;
+        const int w = getWidth(), pad = 14;
+        int y = 14;
         for (auto& it : items)
         {
             const bool visible = itemIsVisible(it);
@@ -206,18 +203,18 @@ public:
                     break;
                 }
             }
-            y += it.h + 5;
+            y += it.h + 7;
         }
     }
 
     int getTotalHeight() const
     {
-        int y = 8;
+        int y = 14;
         for (const auto& it : items)
         {
-            if (itemIsVisible(it)) y += it.h + 5;
+            if (itemIsVisible(it)) y += it.h + 7;
         }
-        return y + 8;
+        return y + 14;
     }
 
     // Called from the editor's timer.
@@ -347,16 +344,16 @@ private:
         owned.emplace_back(b);
         addAndMakeVisible(b);
         b->setClickingTogglesState(false);
-        b->setColour(juce::TextButton::buttonColourId, juce::Colour(parent < 0 ? 0xFF202338 : 0xFF151F30));
-        b->setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF293149));
-        b->setColour(juce::TextButton::textColourOffId, juce::Colour(0xFF6DE7F4));
-        b->setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFB6FAFF));
+        b->setColour(juce::TextButton::buttonColourId, juce::Colour(parent < 0 ? 0xFF2B2D33 : 0xFF24262B));
+        b->setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF34373F));
+        b->setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFE8E9ED));
+        b->setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFFFFFFF));
         sections.push_back({ b, title, expanded, parent });
         if (parent < 0)
             currentMainSection = idx;
         currentSection = idx;
         updateSectionButton(idx);
-        items.push_back({ Header, b, nullptr, nullptr, parent < 0 ? 29 : 26, idx });
+        items.push_back({ Header, b, nullptr, nullptr, parent < 0 ? 36 : 32, idx });
         b->onClick = [this, idx]
         {
             sections[static_cast<std::size_t> (idx)].expanded = ! sections[static_cast<std::size_t> (idx)].expanded;
@@ -368,7 +365,11 @@ private:
     void updateSectionButton(int idx)
     {
         auto& sec = sections[(size_t) idx];
-        sec.button->setButtonText((sec.expanded ? "v   " : ">   ") + sec.title);
+        sec.button->getProperties().set("sectionHeader", true);
+        sec.button->getProperties().set("sectionExpanded", sec.expanded);
+        sec.button->setButtonText(sec.title);
+        sec.button->setTooltip(sec.expanded ? "Collapse " + sec.title : "Expand " + sec.title);
+        sec.button->repaint();
     }
 
     juce::Label* newLabel(const juce::String& t)
@@ -376,8 +377,8 @@ private:
         auto* l = new juce::Label({}, t);
         owned.emplace_back(l);
         addAndMakeVisible(l);
-        l->setColour(juce::Label::textColourId, juce::Colour(0xFFD8DFEC));
-        l->setFont(vizFontNamed(juce::Font::getDefaultSansSerifFontName(), 12.0f, juce::Font::plain));
+        l->setColour(juce::Label::textColourId, juce::Colour(0xFFD0D2D9));
+        l->setFont(vizFontNamed(juce::Font::getDefaultSansSerifFontName(), 12.5f, juce::Font::plain));
         return l;
     }
 
@@ -387,7 +388,7 @@ private:
         owned.emplace_back(c);
         addAndMakeVisible(c);
         styleCombo(*c);
-        items.push_back({ LabelCtl, newLabel(label), c, nullptr, 25, currentSection });
+        items.push_back({ LabelCtl, newLabel(label), c, nullptr, 30, currentSection });
         return c;
     }
 
@@ -400,7 +401,7 @@ private:
         if (auto* cp = dynamic_cast<juce::AudioParameterChoice*>(proc.apvts.getParameter(id)))
             c->addItemList(cp->choices, 1);
         comboAtts.push_back(std::make_unique<ComboAtt>(proc.apvts, id, *c));
-        items.push_back({ LabelCtl, newLabel(label), c, nullptr, 25, currentSection });
+        items.push_back({ LabelCtl, newLabel(label), c, nullptr, 30, currentSection });
     }
 
     void addSlider(const char* id, const juce::String& label)
@@ -409,14 +410,14 @@ private:
         owned.emplace_back(s);
         addAndMakeVisible(s);
         s->setTextBoxStyle(juce::Slider::TextBoxRight, false, 54, 18);
-        s->setColour(juce::Slider::trackColourId, juce::Colour(0xFF32CBDC));
-        s->setColour(juce::Slider::thumbColourId, juce::Colour(0xFFB9F7FF));
-        s->setColour(juce::Slider::backgroundColourId, juce::Colour(0xFF252B3D));
-        s->setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFE8EDF6));
-        s->setColour(juce::Slider::textBoxBackgroundColourId, juce::Colour(0xFF111522));
-        s->setColour(juce::Slider::textBoxOutlineColourId, juce::Colour(0xFF30384D));
+        s->setColour(juce::Slider::trackColourId, juce::Colour(0xFF3478F6));
+        s->setColour(juce::Slider::thumbColourId, juce::Colour(0xFFF5F6F8));
+        s->setColour(juce::Slider::backgroundColourId, juce::Colour(0xFF41444C));
+        s->setColour(juce::Slider::textBoxTextColourId, juce::Colour(0xFFE8E9ED));
+        s->setColour(juce::Slider::textBoxBackgroundColourId, juce::Colour(0xFF24262B));
+        s->setColour(juce::Slider::textBoxOutlineColourId, juce::Colour(0xFF41444C));
         sliderAtts.push_back(std::make_unique<SliderAtt>(proc.apvts, id, *s));
-        items.push_back({ LabelCtl, newLabel(label), s, nullptr, 23, currentSection });
+        items.push_back({ LabelCtl, newLabel(label), s, nullptr, 30, currentSection });
     }
 
     void addToggle(const char* id, const juce::String& label)
@@ -424,10 +425,10 @@ private:
         auto* b = new juce::ToggleButton(label);
         owned.emplace_back(b);
         addAndMakeVisible(b);
-        b->setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFDCE5F1));
-        b->setColour(juce::ToggleButton::tickColourId, juce::Colour(0xFF35D0E1));
+        b->setColour(juce::ToggleButton::textColourId, juce::Colour(0xFFE0E2E7));
+        b->setColour(juce::ToggleButton::tickColourId, juce::Colour(0xFF3478F6));
         buttonAtts.push_back(std::make_unique<ButtonAtt>(proc.apvts, id, *b));
-        items.push_back({ Full, b, nullptr, nullptr, 24, currentSection });
+        items.push_back({ Full, b, nullptr, nullptr, 30, currentSection });
     }
 
     void addButtons(std::initializer_list<const char*> names, std::vector<std::function<void()>> actions)
@@ -443,8 +444,8 @@ private:
             b->onClick = actions[i++];
             comps.push_back(b);
         }
-        if (comps.size() == 2) items.push_back({ Split2, comps[0], comps[1], nullptr, 28, currentSection });
-        else items.push_back({ Split3, comps[0], comps[1], comps[2], 28, currentSection });
+        if (comps.size() == 2) items.push_back({ Split2, comps[0], comps[1], nullptr, 30, currentSection });
+        else items.push_back({ Split3, comps[0], comps[1], comps[2], 30, currentSection });
     }
 
     void addActionButton(const juce::String& name, std::function<void()> action)
@@ -454,7 +455,7 @@ private:
         addAndMakeVisible(b);
         styleActionButton(*b);
         b->onClick = std::move(action);
-        items.push_back({ Full, b, nullptr, nullptr, 29, currentSection });
+        items.push_back({ Full, b, nullptr, nullptr, 32, currentSection });
     }
 
     void addKeyBindingRow (const juce::String& actionId, const juce::String& label)
@@ -495,29 +496,29 @@ private:
 
     void styleActionButton(juce::TextButton& b)
     {
-        b.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF24283A));
-        b.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF33435A));
-        b.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFF1F5FC));
-        b.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFB7FAFF));
+        b.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF303239));
+        b.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF3478F6));
+        b.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFF2F3F5));
+        b.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFFFFFFF));
     }
 
     void styleCombo(juce::ComboBox& c)
     {
-        c.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF151A28));
-        c.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFE9EEF8));
-        c.setColour(juce::ComboBox::outlineColourId, juce::Colour(0xFF333C53));
-        c.setColour(juce::ComboBox::arrowColourId, juce::Colour(0xFF69DCEB));
+        c.setColour(juce::ComboBox::backgroundColourId, juce::Colour(0xFF27292F));
+        c.setColour(juce::ComboBox::textColourId, juce::Colour(0xFFF2F3F5));
+        c.setColour(juce::ComboBox::outlineColourId, juce::Colour(0xFF41444C));
+        c.setColour(juce::ComboBox::arrowColourId, juce::Colour(0xFFA6AAB5));
     }
 
     void styleTextEditor(juce::TextEditor& t)
     {
-        t.setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xFF101522));
-        t.setColour(juce::TextEditor::outlineColourId, juce::Colour(0xFF30394F));
-        t.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colour(0xFF37C8DC));
-        t.setColour(juce::TextEditor::textColourId, juce::Colour(0xFFE7EDF8));
-        t.setColour(juce::TextEditor::highlightColourId, juce::Colour(0xFF2F718D));
+        t.setColour(juce::TextEditor::backgroundColourId, juce::Colour(0xFF24262B));
+        t.setColour(juce::TextEditor::outlineColourId, juce::Colour(0xFF41444C));
+        t.setColour(juce::TextEditor::focusedOutlineColourId, juce::Colour(0xFF78A7FF));
+        t.setColour(juce::TextEditor::textColourId, juce::Colour(0xFFF2F3F5));
+        t.setColour(juce::TextEditor::highlightColourId, juce::Colour(0xFF3478F6));
         t.setColour(juce::TextEditor::highlightedTextColourId, juce::Colours::white);
-        t.setColour(juce::CaretComponent::caretColourId, juce::Colour(0xFFBDF8FF));
+        t.setColour(juce::CaretComponent::caretColourId, juce::Colour(0xFFF2F3F5));
     }
 
     void chooseFiles(const juce::String& title, const juce::String& wildcard)
@@ -575,17 +576,19 @@ private:
 AudioVisualizerEditor::AudioVisualizerEditor(AudioVisualizerProcessor& p)
     : AudioProcessorEditor(&p), proc(p)
 {
+    setLookAndFeel(&interfaceStyle);
     initialiseKeyBindings();
     panel = std::make_unique<Panel>(*this, proc);
     viewport.setViewedComponent(panel.get(), false);
     viewport.setScrollBarsShown(true, false);
+    viewport.setScrollBarThickness(8);
     addAndMakeVisible(viewport);
 
     panelButton.onClick = [this] { togglePanel(); };
     panelButton.setAlpha(0.92f);
-    panelButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xEE171D2C));
-    panelButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF2A3A50));
-    panelButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFB9F6FF));
+    panelButton.setColour(juce::TextButton::buttonColourId, juce::Colour(0xFF27292F));
+    panelButton.setColour(juce::TextButton::buttonOnColourId, juce::Colour(0xFF3478F6));
+    panelButton.setColour(juce::TextButton::textColourOffId, juce::Colour(0xFFF2F3F5));
     panelButton.setColour(juce::TextButton::textColourOnId, juce::Colour(0xFFFFFFFF));
     addAndMakeVisible(panelButton);
 
@@ -611,12 +614,13 @@ AudioVisualizerEditor::~AudioVisualizerEditor()
 {
     stopTimer();
     glContext.detach();   // must happen before the renderer / components are destroyed
+    setLookAndFeel(nullptr);
 }
 
 void AudioVisualizerEditor::resized()
 {
     const int w = getWidth(), h = getHeight();
-    const int pw = juce::jmin(380, w / 2 + 40);
+    const int pw = juce::jmin(400, w / 2 + 40);
     viewport.setBounds(w - pw, 0, pw, h);
     panel->setSize(juce::jmax(100, viewport.getMaximumVisibleWidth()), panel->getTotalHeight());
     panelButton.setBounds((viewport.isVisible() ? w - pw : w) - 44, 6, 38, 28);
@@ -652,7 +656,7 @@ void AudioVisualizerEditor::toggleCleanOutput()
 
 void AudioVisualizerEditor::timerCallback()
 {
-    panel->sync();
+    if (viewport.isVisible()) panel->sync();
     const bool recentlyMoved = (juce::Time::getMillisecondCounter() - lastMoveMs) < 3500;
     panelButton.setVisible(!cleanOutput && (recentlyMoved || viewport.isVisible()));
 }
