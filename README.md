@@ -10,6 +10,8 @@ and a GPU pipeline with trails, glow and beat-reactive effects. Built with JUCE 
 
 ## 1. LOCK. IN.
 
+<img width="400" height="303" alt="porter-robinson-stream" src="https://github.com/user-attachments/assets/6536a211-9843-4221-92aa-e0be8020d6bd" />
+
 ## 2. Install
 
 **Recommended for users:** download the direct installer asset from the GitHub Release rather than a source ZIP. One installer lets users choose components in a menu; they do not need to extract an installer from another archive.
