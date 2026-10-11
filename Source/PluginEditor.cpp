@@ -417,7 +417,7 @@ private:
         t.setColour(juce::TextEditor::textColourId, juce::Colour(0xFFE7EDF8));
         t.setColour(juce::TextEditor::highlightColourId, juce::Colour(0xFF2F718D));
         t.setColour(juce::TextEditor::highlightedTextColourId, juce::Colours::white);
-        t.setColour(juce::TextEditor::caretColourId, juce::Colour(0xFFBDF8FF));
+        t.setColour(juce::CaretComponent::caretColourId, juce::Colour(0xFFBDF8FF));
     }
 
     void chooseFiles(const juce::String& title, const juce::String& wildcard)

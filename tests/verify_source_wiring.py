@@ -16,6 +16,12 @@ RENDERER_H = (SRC / "VisualRenderer.h").read_text(encoding="utf-8")
 SHADERS = (SRC / "Shaders.h").read_text(encoding="utf-8")
 PROCESSOR = (SRC / "PluginProcessor.cpp").read_text(encoding="utf-8")
 
+# JUCE 8 exposes the text caret colour ID through CaretComponent, not TextEditor.
+if "juce::TextEditor::caretColourId" in EDITOR:
+    fail("invalid JUCE TextEditor::caretColourId reference")
+if "juce::CaretComponent::caretColourId" not in EDITOR:
+    fail("text-editor caret colour must use juce::CaretComponent::caretColourId")
+
 
 def fail(message: str) -> None:
     print(f"FAIL: {message}", file=sys.stderr)
