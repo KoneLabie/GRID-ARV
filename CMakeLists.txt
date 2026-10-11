@@ -11,7 +11,7 @@ project(GridARV VERSION 1.0.0 LANGUAGES C CXX)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-option(ENABLE_VST2 "Also build a VST2 plugin (needs the Steinberg VST2 SDK + JUCE 7)" OFF)
+option(ENABLE_VST2 "Also build VST2 (requires valid pre-October-2018 Steinberg written permission, private SDK + JUCE 7)" OFF)
 set(VST2_SDK_PATH "" CACHE PATH "Folder that contains pluginterfaces/vst2.x/aeffect.h")
 # JUCE 8 dropped the VST2 wrapper. For VST2 builds use:  -DJUCE_TAG=7.0.12
 set(JUCE_TAG "8.0.4" CACHE STRING "JUCE git tag to build against")
