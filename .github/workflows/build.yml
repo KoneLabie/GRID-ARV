@@ -6,31 +6,62 @@ on:
     tags: ['v*']
   pull_request:
   workflow_dispatch:
+    inputs:
+      build_vst2:
+        description: 'Also build and package VST2 (requires a pre-October-2018 Steinberg VST2 distribution licence and a private self-hosted runner with the SDK installed)'
+        type: boolean
+        required: true
+        default: false
+      confirm_vst2_distribution_rights:
+        description: 'I confirm GridARV has written permission to distribute a VST2 binary under a Steinberg VST2 licence signed before October 2018'
+        type: boolean
+        required: true
+        default: false
+
+permissions:
+  contents: read
 
 jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Validate optional VST2 authorization
+        if: inputs.build_vst2
+        shell: bash
+        env:
+          RIGHTS_ACKNOWLEDGED: ${{ inputs.confirm_vst2_distribution_rights }}
+          VST2_DISTRIBUTION_AUTHORIZED: ${{ vars.VST2_DISTRIBUTION_AUTHORIZED }}
+        run: |
+          if [[ "$RIGHTS_ACKNOWLEDGED" != "true" ]]; then
+            echo "::error::VST2 was selected without confirming pre-existing written distribution rights."
+            exit 1
+          fi
+          if [[ "$VST2_DISTRIBUTION_AUTHORIZED" != "true" ]]; then
+            echo "::error::VST2 packaging is disabled. Only set the repository variable VST2_DISTRIBUTION_AUTHORIZED=true if you already have Steinberg's required written VST2 distribution permission under a licence signed before October 2018. A VST2 SDK copy alone is not permission."
+            exit 1
+          fi
+          echo "VST2 authorization gate passed; SDK must remain on a private self-hosted runner and must not be uploaded to this repository or workflow artifacts."
+
   build:
+    needs: validate
     strategy:
       fail-fast: false
       matrix:
         include:
           - os: windows-latest
             name: Windows
+            vst2_runner_labels: '["self-hosted","Windows","gridarv-vst2-sdk"]'
           - os: macos-latest
             name: macOS
+            vst2_runner_labels: '["self-hosted","macOS","gridarv-vst2-sdk"]'
           - os: ubuntu-22.04
             name: Linux
-    runs-on: ${{ matrix.os }}
+            vst2_runner_labels: '["self-hosted","Linux","gridarv-vst2-sdk"]'
+    runs-on: ${{ inputs.build_vst2 && fromJSON(matrix.vst2_runner_labels) || matrix.os }}
+    env:
+      BUILD_VST2: ${{ inputs.build_vst2 && 'true' || 'false' }}
     steps:
-      - uses: actions/checkout@v6
-
-      - name: Install Linux dependencies
-        if: runner.os == 'Linux'
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y libasound2-dev libfreetype6-dev libx11-dev \
-            libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev \
-            libxrandr-dev libxrender-dev libglu1-mesa-dev mesa-common-dev libgl1-mesa-dev \
-            libfontconfig1-dev libcurl4-openssl-dev
+      - uses: actions/checkout@v7
 
       - name: Source and installer smoke tests
         shell: bash
@@ -43,8 +74,39 @@ jobs:
         shell: bash
         run: python tests/verify_linux_installer.py
 
-      - name: Configure
-        run: cmake -B build -DCMAKE_BUILD_TYPE=Release
+      - name: Validate private VST2 SDK location
+        if: env.BUILD_VST2 == 'true'
+        shell: bash
+        run: |
+          if [[ -z "${VST2_SDK_PATH:-}" ]]; then
+            echo "::error::Set VST2_SDK_PATH on the self-hosted runner to a private SDK directory outside the checked-out repository."
+            exit 1
+          fi
+          if [[ ! -f "$VST2_SDK_PATH/pluginterfaces/vst2.x/aeffect.h" ]]; then
+            echo "::error::VST2_SDK_PATH does not contain pluginterfaces/vst2.x/aeffect.h."
+            exit 1
+          fi
+
+      - name: Install Linux dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libasound2-dev libfreetype6-dev libx11-dev \
+            libxcomposite-dev libxcursor-dev libxext-dev libxinerama-dev \
+            libxrandr-dev libxrender-dev libglu1-mesa-dev mesa-common-dev libgl1-mesa-dev \
+            libfontconfig1-dev libcurl4-openssl-dev
+
+      - name: Configure standard build
+        if: env.BUILD_VST2 != 'true'
+        run: cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_VST2=OFF -DJUCE_TAG=8.0.4
+
+      - name: Configure VST2-enabled build
+        if: env.BUILD_VST2 == 'true'
+        shell: bash
+        run: |
+          SDK="${VST2_SDK_PATH//\\//}"
+          cmake -B build -DCMAKE_BUILD_TYPE=Release -DENABLE_VST2=ON \
+            -DVST2_SDK_PATH="$SDK" -DJUCE_TAG=7.0.12
 
       - name: Build
         run: cmake --build build --config Release --parallel
@@ -76,16 +138,20 @@ jobs:
       - name: Zip (Windows)
         if: runner.os == 'Windows'
         shell: pwsh
-        run: Compress-Archive -Path dist/stage/* -DestinationPath dist/GridARV-Windows.zip
+        run: |
+          $flavor = if ($env:BUILD_VST2 -eq 'true') { 'VST2' } else { 'Standard' }
+          Compress-Archive -Path dist/stage/* -DestinationPath "dist/GridARV-$flavor-Windows.zip"
 
       - name: Zip (macOS / Linux)
         if: runner.os != 'Windows'
         shell: bash
-        run: cd dist/stage && zip -r -y ../GridARV-${{ matrix.name }}.zip .
+        run: |
+          if [[ "$BUILD_VST2" == "true" ]]; then FLAVOR=VST2; else FLAVOR=Standard; fi
+          cd dist/stage && zip -r -y "../GridARV-${FLAVOR}-${{ matrix.name }}.zip" .
 
       - uses: actions/upload-artifact@v7
         with:
-          name: GridARV-${{ matrix.name }}
+          name: GridARV-${{ inputs.build_vst2 && 'VST2' || 'Standard' }}-${{ matrix.name }}
           path: |
             dist/*.zip
             dist/GridARV-Installer-*
