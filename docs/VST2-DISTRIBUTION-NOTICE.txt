@@ -1,8 +1,0 @@
-GridARV VST2 Distribution Notice
-
-VST is a trademark of Steinberg Media Technologies GmbH. The VST2 plug-in interface technology is proprietary to Steinberg Media Technologies GmbH.
-
-This optional GridARV VST2 binary may be redistributed only by a distributor that holds the required written Steinberg VST2 distribution permission under a licence signed before October 2018. Possessing a copy of the SDK or enabling a build option does not grant permission. Follow all terms of the applicable licence and Steinberg's VST usage guidelines.
-
-Official licensing guidance:
-https://steinbergmedia.github.io/vst3_dev_portal/pages/FAQ/Licensing.html
