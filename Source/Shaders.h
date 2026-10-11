@@ -28,12 +28,43 @@ uniform vec3 uC0, uC1, uC2;
 uniform float uHue, uBright;
 uniform sampler2D uAudio, uHist, uImage;
 uniform float uHistRow, uHasImage, uImgAspect;
+uniform float uImgScale, uImgFit, uImgFlipX, uImgFlipY, uImgOffsetX, uImgOffsetY;
+uniform vec2 uImgRotCS;
 uniform float uAges[8];
 uniform float uSeeds[8];
 
 #define PI 3.14159265359
 #define TAU 6.28318530718
 #define ASPECT (iRes.x / iRes.y)
+
+// Shared image placement transform. p is screen-centred UV space; image scale,
+// fit, rotation, flips and offsets are applied once here for all Image FX modes.
+vec2 mapImageUV(vec2 p, out float inside)
+{
+    float a = max(ASPECT, 0.001);
+    float ia = max(uImgAspect, 0.001);
+    p -= vec2(uImgOffsetX, uImgOffsetY);
+    vec2 metric = vec2(p.x * a, p.y);
+    metric = vec2(uImgRotCS.x * metric.x + uImgRotCS.y * metric.y,
+                   -uImgRotCS.y * metric.x + uImgRotCS.x * metric.y);
+    p = vec2(metric.x / a, metric.y);
+
+    vec2 drawSize = vec2(1.0);
+    if (uImgFit < 0.5) { // cover: fill the canvas, cropping the long dimension
+        if (a > ia) drawSize.y = a / ia;
+        else         drawSize.x = ia / a;
+    } else if (uImgFit < 1.5) { // contain: show the complete image
+        if (a > ia) drawSize.x = ia / a;
+        else         drawSize.y = a / ia;
+    } // stretch: drawSize remains (1, 1)
+
+    vec2 q = p / max(drawSize * max(uImgScale, 0.001), vec2(0.001)) + 0.5;
+    if (uImgFlipX > 0.5) q.x = 1.0 - q.x;
+    if (uImgFlipY > 0.5) q.y = 1.0 - q.y;
+    inside = step(0.0, q.x) * step(q.x, 1.0) * step(0.0, q.y) * step(q.y, 1.0);
+    // Keep the existing OpenGL image-texture vertical convention.
+    return vec2(q.x, 1.0 - q.y);
+}
 
 float hash11(float p){ p = fract(p * 0.1031); p *= p + 33.33; p *= p + p; return fract(p); }
 float hash21(vec2 p){ vec3 p3 = fract(vec3(p.xyx) * 0.1031); p3 += dot(p3, p3.yzx + 33.33); return fract((p3.x + p3.y) * p3.z); }
@@ -143,9 +174,36 @@ uniform sampler2D uTex;
 uniform sampler2D uImage;
 uniform vec2 uTexel;
 uniform float uGlow, uAberr, uBeat, uVig, uImgMix, uHasImage, uImgAspect, uAspect;
+uniform float uImgScale, uImgFit, uImgFlipX, uImgFlipY, uImgOffsetX, uImgOffsetY;
+uniform vec2 uImgRotCS;
+vec2 mapImageUV(vec2 p, out float inside)
+{
+    float a = max(uAspect, 0.001);
+    float ia = max(uImgAspect, 0.001);
+    p -= vec2(uImgOffsetX, uImgOffsetY);
+    vec2 metric = vec2(p.x * a, p.y);
+    metric = vec2(uImgRotCS.x * metric.x + uImgRotCS.y * metric.y,
+                   -uImgRotCS.y * metric.x + uImgRotCS.x * metric.y);
+    p = vec2(metric.x / a, metric.y);
+    vec2 drawSize = vec2(1.0);
+    if (uImgFit < 0.5) {
+        if (a > ia) drawSize.y = a / ia;
+        else         drawSize.x = ia / a;
+    } else if (uImgFit < 1.5) {
+        if (a > ia) drawSize.x = ia / a;
+        else         drawSize.y = a / ia;
+    }
+    vec2 q = p / max(drawSize * max(uImgScale, 0.001), vec2(0.001)) + 0.5;
+    if (uImgFlipX > 0.5) q.x = 1.0 - q.x;
+    if (uImgFlipY > 0.5) q.y = 1.0 - q.y;
+    inside = step(0.0, q.x) * step(q.x, 1.0) * step(0.0, q.y) * step(q.y, 1.0);
+    return vec2(q.x, 1.0 - q.y);
+}
 void main()
 {
-    vec2 uv = vUV;
+    // Correct the display's top-to-bottom orientation at the final composite.
+    // Keep this transform here so the scene, trails, and image are flipped together.
+    vec2 uv = vec2(vUV.x, 1.0 - vUV.y);
     vec3 c;
     if (uAberr > 0.001) {
         float o = uAberr * (0.002 + 0.012 * uBeat);
@@ -166,14 +224,16 @@ void main()
         c += g * uGlow * 0.075;
     }
     if (uImgMix > 0.001 && uHasImage > 0.5) {
-        vec2 s = vUV - 0.5;
-        if (uAspect > uImgAspect) s.y *= uImgAspect / uAspect; else s.x *= uAspect / uImgAspect;
-        s /= 1.0 + 0.04 * uBeat;
-        vec3 im = texture2D(uImage, clamp(vec2(s.x + 0.5, 0.5 - s.y), 0.0, 1.0)).rgb;
-        float l = dot(c, vec3(0.299, 0.587, 0.114));
-        c += im * uImgMix * (1.0 - clamp(l * 1.2, 0.0, 1.0));
+        vec2 p = (uv - 0.5) / (1.0 + 0.04 * uBeat);
+        float imageInside;
+        vec2 imageUV = mapImageUV(p, imageInside);
+        if (imageInside > 0.5) {
+            vec3 im = texture2D(uImage, imageUV).rgb;
+            float l = dot(c, vec3(0.299, 0.587, 0.114));
+            c += im * uImgMix * (1.0 - clamp(l * 1.2, 0.0, 1.0));
+        }
     }
-    float vg = 1.0 - uVig * smoothstep(0.35, 0.95, length((vUV - 0.5) * vec2(uAspect, 1.0)));
+    float vg = 1.0 - uVig * smoothstep(0.35, 0.95, length((uv - 0.5) * vec2(uAspect, 1.0)));
     gl_FragColor = vec4(c * vg, 1.0);
 }
 )GLSL";
@@ -193,7 +253,11 @@ void main()
     float c = cos(uRot); float s = sin(uRot);
     p = vec2(c * p.x - s * p.y, s * p.x + c * p.y);
     p.x /= uAspect;
-    gl_Position = vec4(p + uCenter, 0.0, 1.0);
+    // The text is rendered after the final compositor pass, so apply the same
+    // vertical display correction to its geometry as well.
+    vec2 displayPos = p + uCenter;
+    displayPos.y = -displayPos.y;
+    gl_Position = vec4(displayPos, 0.0, 1.0);
 }
 )GLSL";
 
@@ -919,10 +983,13 @@ vec3 procImg(vec2 q){
 vec2 mirrorRep(vec2 v){ return 1.0 - abs(1.0 - mod(v, 2.0)); }
 vec3 img(vec2 s)
 {
-    float A = ASPECT; vec2 q = s;
-    if (uHasImage > 0.5) { if (A > uImgAspect) q.y *= uImgAspect / A; else q.x *= A / uImgAspect; }
-    q = mirrorRep(vec2(q.x + 0.5, 0.5 - q.y));
-    if (uHasImage > 0.5) return texture2D(uImage, q).rgb;
+    if (uHasImage > 0.5) {
+        float imageInside;
+        vec2 q = mapImageUV(s, imageInside);
+        if (imageInside > 0.5) return texture2D(uImage, q).rgb;
+        return vec3(0.0);
+    }
+    vec2 q = mirrorRep(vec2(s.x + 0.5, 0.5 - s.y));
     return procImg(q);
 }
 vec2 toS(vec2 sa){ return vec2(sa.x / ASPECT, sa.y); }

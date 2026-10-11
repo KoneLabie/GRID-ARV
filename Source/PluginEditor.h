@@ -33,6 +33,7 @@ public:
     void stepMode(int delta);
     void randomMode();
     void togglePanel();
+    void toggleCleanOutput();
     juce::String getStatusText() const;
 
 private:
@@ -45,6 +46,7 @@ private:
     std::unique_ptr<Panel> panel;
     juce::Viewport viewport;
     juce::TextButton panelButton { "UI" };
+    bool cleanOutput = false;
     juce::uint32 lastMoveMs = 0;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR(AudioVisualizerEditor)

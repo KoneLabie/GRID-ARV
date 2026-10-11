@@ -14,6 +14,9 @@ VisualRenderer::VisualRenderer(AudioVisualizerProcessor& p, juce::OpenGLContext&
     P.glow = g(ParamID::glow);           P.aberr = g(ParamID::aberr);       P.hue = g(ParamID::hue);
     P.hueSpin = g(ParamID::hueSpin);     P.quality = g(ParamID::quality);   P.autoBeats = g(ParamID::autoBeats);
     P.imgSlot = g(ParamID::imgSlot);     P.imgBeats = g(ParamID::imgBeats); P.imgMix = g(ParamID::imgMix);
+    P.imgScale = g(ParamID::imgScale);   P.imgFit = g(ParamID::imgFit);       P.imgRotate = g(ParamID::imgRotate);
+    P.imgFlipX = g(ParamID::imgFlipX);   P.imgFlipY = g(ParamID::imgFlipY);
+    P.imgOffsetX = g(ParamID::imgOffsetX); P.imgOffsetY = g(ParamID::imgOffsetY);
     P.textOn = g(ParamID::textOn);       P.textLine = g(ParamID::textLine); P.textBeats = g(ParamID::textBeats);
     P.textSize = g(ParamID::textSize);   P.textReact = g(ParamID::textReact);
     P.textAnim = g(ParamID::textAnim);   P.textColor = g(ParamID::textColor);
@@ -177,6 +180,14 @@ void VisualRenderer::setCommonUniforms(Prog& p)
     glUniform1f(loc(p, "uHistRow"), (float) histRow);
     glUniform1f(loc(p, "uHasImage"), hasImage ? 1.f : 0.f);
     glUniform1f(loc(p, "uImgAspect"), imgAspect);
+    glUniform1f(loc(p, "uImgScale"), P.imgScale->load());
+    glUniform1f(loc(p, "uImgFit"), P.imgFit->load());
+    const float imgAngle = P.imgRotate->load() * 0.01745329251994329577f;
+    glUniform2f(loc(p, "uImgRotCS"), std::cos(imgAngle), std::sin(imgAngle));
+    glUniform1f(loc(p, "uImgFlipX"), P.imgFlipX->load());
+    glUniform1f(loc(p, "uImgFlipY"), P.imgFlipY->load());
+    glUniform1f(loc(p, "uImgOffsetX"), P.imgOffsetX->load());
+    glUniform1f(loc(p, "uImgOffsetY"), P.imgOffsetY->load());
     glUniform1fv(loc(p, "uAges"), 8, an.getAges().data());
     glUniform1fv(loc(p, "uSeeds"), 8, an.getSeeds().data());
 }
@@ -208,12 +219,13 @@ void VisualRenderer::updateImage()
     auto img = juce::ImageFileFormat::loadFrom(proc.assets.getImageFile(slot - 1));
     if (!img.isValid()) return;
 
+    // Bound GPU texture memory/upload cost; high-quality resampling only runs when the image changes.
     const int maxSide = 2048;
     if (juce::jmax(img.getWidth(), img.getHeight()) > maxSide)
     {
         const float k = (float) maxSide / (float) juce::jmax(img.getWidth(), img.getHeight());
         img = img.rescaled(juce::jmax(1, juce::roundToInt(img.getWidth() * k)),
-                           juce::jmax(1, juce::roundToInt(img.getHeight() * k)), juce::Graphics::mediumResamplingQuality);
+                           juce::jmax(1, juce::roundToInt(img.getHeight() * k)), juce::Graphics::highResamplingQuality);
     }
     imgTex.loadImage(img);
     imgAspect = (float) img.getWidth() / (float) img.getHeight();
@@ -400,6 +412,14 @@ void VisualRenderer::renderOpenGL()
         glUniform1f(loc(finalProg, "uHasImage"), hasImage ? 1.f : 0.f);
         glUniform1f(loc(finalProg, "uImgAspect"), imgAspect);
         glUniform1f(loc(finalProg, "uAspect"), (float) vpW / (float) vpH);
+        glUniform1f(loc(finalProg, "uImgScale"), P.imgScale->load());
+        glUniform1f(loc(finalProg, "uImgFit"), P.imgFit->load());
+        const float imgAngle = P.imgRotate->load() * 0.01745329251994329577f;
+        glUniform2f(loc(finalProg, "uImgRotCS"), std::cos(imgAngle), std::sin(imgAngle));
+        glUniform1f(loc(finalProg, "uImgFlipX"), P.imgFlipX->load());
+        glUniform1f(loc(finalProg, "uImgFlipY"), P.imgFlipY->load());
+        glUniform1f(loc(finalProg, "uImgOffsetX"), P.imgOffsetX->load());
+        glUniform1f(loc(finalProg, "uImgOffsetY"), P.imgOffsetY->load());
         drawQuad(finalProg.attr);
     }
 

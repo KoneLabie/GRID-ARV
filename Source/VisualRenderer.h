@@ -54,7 +54,8 @@ private:
     {
         std::atomic<float> *mode, *palette, *sens, *smooth, *speed, *bright, *trails, *zoom, *rot, *glow, *aberr,
             *hue, *hueSpin, *quality, *autoBeats, *imgSlot, *imgBeats, *imgMix, *textOn, *textLine, *textBeats,
-            *textSize, *textReact, *textAnim, *textColor, *textPos, *lyricOff, *followHost;
+            *textSize, *textReact, *textAnim, *textColor, *textPos, *lyricOff, *followHost,
+            *imgScale, *imgFit, *imgRotate, *imgFlipX, *imgFlipY, *imgOffsetX, *imgOffsetY;
     } P {};
 
     std::unique_ptr<Prog> modeProgs[B_COUNT];

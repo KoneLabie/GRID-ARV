@@ -24,6 +24,13 @@ namespace ParamID
     inline constexpr const char* imgSlot = "imgSlot";
     inline constexpr const char* imgBeats = "imgBeats";
     inline constexpr const char* imgMix = "imgMix";
+    inline constexpr const char* imgScale = "imgScale";
+    inline constexpr const char* imgFit = "imgFit";
+    inline constexpr const char* imgRotate = "imgRotate";
+    inline constexpr const char* imgFlipX = "imgFlipX";
+    inline constexpr const char* imgFlipY = "imgFlipY";
+    inline constexpr const char* imgOffsetX = "imgOffsetX";
+    inline constexpr const char* imgOffsetY = "imgOffsetY";
     inline constexpr const char* textOn = "textOn";
     inline constexpr const char* textLine = "textLine";
     inline constexpr const char* textBeats = "textBeats";
@@ -88,6 +95,13 @@ inline juce::AudioProcessorValueTreeState::ParameterLayout createParameterLayout
     I(ParamID::imgSlot,  "Image", 0, 64, 0);
     I(ParamID::imgBeats, "Image Cycle (beats)", 0, 64, 0);
     F(ParamID::imgMix,   "Image Background", 0.0f, 1.0f, 0.0f);
+    F(ParamID::imgScale, "Image Scale", 0.1f, 4.0f, 1.0f, 0.6f);
+    C(ParamID::imgFit, "Image Fit", { "Cover (crop edges)", "Contain (show full image)", "Stretch" }, 0);
+    F(ParamID::imgRotate, "Image Rotation", -180.0f, 180.0f, 0.0f);
+    B(ParamID::imgFlipX, "Flip Image Horizontally", false);
+    B(ParamID::imgFlipY, "Flip Image Vertically", false);
+    F(ParamID::imgOffsetX, "Image Horizontal Position", -0.5f, 0.5f, 0.0f);
+    F(ParamID::imgOffsetY, "Image Vertical Position", -0.5f, 0.5f, 0.0f);
 
     B(ParamID::textOn, "Text On", true);
     I(ParamID::textLine,  "Text Line (0 = auto)", 0, 999, 0);

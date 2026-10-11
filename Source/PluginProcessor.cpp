@@ -35,7 +35,7 @@ void AssetLibrary::refresh()
 
 bool AssetLibrary::isImageFile(const juce::File& f)
 {
-    return f.hasFileExtension("png;jpg;jpeg;gif");
+    return f.hasFileExtension("png;jpg;jpeg;gif;bmp");
 }
 bool AssetLibrary::isFontFile(const juce::File& f) { return f.hasFileExtension("ttf;otf;ttc"); }
 bool AssetLibrary::isTextFile(const juce::File& f) { return f.hasFileExtension("lrc;srt;txt"); }
