@@ -32,6 +32,9 @@ jobs:
             libxrandr-dev libxrender-dev libglu1-mesa-dev mesa-common-dev libgl1-mesa-dev \
             libfontconfig1-dev libcurl4-openssl-dev
 
+      - name: Source smoke tests
+        run: python tests/verify_source_wiring.py
+
       - name: Configure
         run: cmake -B build -DCMAKE_BUILD_TYPE=Release
 
